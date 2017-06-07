@@ -1,7 +1,10 @@
+// Package zip make a packing base on raw zip package.
+// It let you easy to pack files and folds directly.
 package zip
 
 import (
 	"archive/zip"
+	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
@@ -25,14 +28,7 @@ func (w *Writer) WriteFiles(path string) error {
 		if info == nil || info.IsDir() {
 			return nil
 		}
-
-		fileBytes, err := ioutil.ReadFile(path)
-		if err != nil {
-			w.Close()
-			return nil
-		}
-		w.WriteBytes(path, fileBytes)
-		return nil
+		return w.WriteFile(path)
 	}); err != nil {
 		return err
 	}
@@ -43,21 +39,42 @@ func (w *Writer) WriteFiles(path string) error {
 func (w *Writer) WriteFile(path string) error {
 	fileBytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		w.Close()
-		return nil
+		return err
 	}
-	w.WriteBytes(path, fileBytes)
-	return nil
+	return w.WriteBytes(path, fileBytes)
 }
 
 // WriteBytes write file bytes to zip.
 func (w *Writer) WriteBytes(path string, fileBytes []byte) error {
 	writer, err := w.Create(w.Prefix + path)
 	if err != nil {
+		w.Close()
 		return err
 	}
 	if _, err = writer.Write(fileBytes); err != nil {
 		return err
 	}
+	return nil
+}
+
+// Pack src into dst
+func Pack(dst, src string) error {
+	buf := bytes.Buffer{}
+
+	w := NewWriter(&buf)
+	if err := w.WriteFiles(src); err != nil {
+		return err
+	}
+	w.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	if _, err := buf.WriteTo(dstFile); err != nil {
+		return err
+	}
+	dstFile.Close()
+
 	return nil
 }

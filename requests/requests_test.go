@@ -1,41 +1,66 @@
 package requests
 
 import (
+	"errors"
+	"fmt"
 	"log"
+	"net/http"
 	"testing"
+	"time"
 )
 
+var address = "localhost:4000"
+var api = "http://" + address + "/api/ping"
+
+func init() {
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
+
+	go func() {
+		http.HandleFunc("/api/ping", func(w http.ResponseWriter, req *http.Request) {
+			w.Write([]byte(fmt.Sprintf(`{"value": "%s"}`, time.Now().Local())))
+		})
+		if err := http.ListenAndServe(address, nil); err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
+	err := errors.New("wait for server.")
+	for err != nil {
+		_, err = http.Head(api)
+		fmt.Print(".")
+		time.Sleep(100 * time.Millisecond)
+	}
+	fmt.Println("\n> Test server started.")
+}
+
 func TestGet(t *testing.T) {
-	resp, err := Get("http://localhost:5000/api/s/user/list", nil)
+	resp, err := Get(api, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println(resp.Content)
-	log.Println(resp.Text)
-	log.Println(resp.JSON())
+	// fmt.Println(resp.Content)
+	// fmt.Println(resp.Text)
+	fmt.Println(resp.JSON())
 }
 
 func TestPost(t *testing.T) {
-	resp, err := Post("http://localhost:5000/api/s/user/join", map[string]interface{}{"address": "http://localhost:5000"})
+	resp, err := Post(api, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println(resp.Content)
-	log.Println(resp.Text)
-	log.Println(resp.JSON())
+	// fmt.Println(resp.Content)
+	// fmt.Println(resp.Text)
+	fmt.Println(resp.JSON())
 }
 
 func TestError(t *testing.T) {
 	SetOkElseError(true)
-	resp, err := Post("http://localhost:5000/api/a/connect/create", map[string]interface{}{"address": "test error."})
+	resp, err := Post(api+"/notfound", nil)
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(resp.StatusCode)
-	log.Println(resp.Content)
-	log.Println(resp.Text)
-	log.Println(resp.JSON())
-}
-func init() {
-	log.SetFlags(log.Lshortfile | log.LstdFlags)
+	fmt.Println(resp.StatusCode)
+	// fmt.Println(resp.Content)
+	// fmt.Println(resp.Text)
+	fmt.Println(resp.JSON())
 }

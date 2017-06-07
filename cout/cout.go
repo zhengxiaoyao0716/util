@@ -1,6 +1,6 @@
 // Package cout means 'color output', for it decorated words with color.
-// It can also understood as 'console out', for interfaces like console.xxx().
-// Last, the concat style use is mostly like cpp out put.
+// It can also understood as a simulator for cpp output, for this concat style:
+// cout.Println(Log(), Info(), ...) ~= cout << log() << Info() << ...
 package cout
 
 import (

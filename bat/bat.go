@@ -1,28 +1,29 @@
+// Package bat build and run bat commands.
+// Notice that bat run async.
 package bat
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
-// Bat 批处理对象
+// Bat object
 type Bat struct {
 	FileName string
 	*os.File
 }
 
-func init() {
-	if err := os.MkdirAll("tmp/", os.ModePerm); err != nil {
-		log.Fatalln("创建临时文件夹失败，" + err.Error())
-	}
-}
-
-// Create 创建一个批处理
+// Create a bat object.
 func Create(name string) (*Bat, error) {
-	fileName := "tmp\\" + name + ".bat"
+	var fileName string
+	if strings.HasSuffix(name, ".bat") {
+		fileName = name
+	} else {
+		fileName = name + ".bat"
+	}
 	file, err := os.Create(fileName)
 	if err != nil {
 		return nil, err
@@ -34,7 +35,7 @@ func Create(name string) (*Bat, error) {
 	return &Bat{fileName, file}, nil
 }
 
-// Append 增加一行命令
+// Append a line of command.
 func (bat *Bat) Append(cmd string) (*Bat, error) {
 	if _, err := bat.File.WriteString(cmd + "\n"); err != nil {
 		return nil, err
@@ -42,23 +43,25 @@ func (bat *Bat) Append(cmd string) (*Bat, error) {
 	return bat, nil
 }
 
-// Run 执行bat
+// Run the bat.
 func (bat *Bat) Run(params ...string) error {
 	paramStr := ""
 	for _, param := range params {
 		paramStr += param
 	}
+	bat.Close()
 	return exec.Command(bat.FileName, paramStr).Run()
 }
 
-// Remove 销毁bat文件
+// Remove and free the bat.
 func (bat *Bat) Remove() error {
+	bat.Close()
 	return os.Remove(bat.FileName)
 }
 
-// Exec 执行bat命令，相当于Create&Append&Close&Run&Remove
+// Exec execute bat command, equals to `Create && Append && Close && Run && Remove`
 func Exec(cmds ...string) error {
-	bat, err := Create("util_bat_exec_" + fmt.Sprint(time.Now().Unix()))
+	bat, err := Create(os.TempDir() + "\\util_bat_" + fmt.Sprint(time.Now().Unix()))
 	if err != nil {
 		return err
 	}

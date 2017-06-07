@@ -1,3 +1,5 @@
+// Package requests is a simple http client, witch provide
+// practical 'text()', 'json()' utils like python side-package.
 package requests
 
 import (

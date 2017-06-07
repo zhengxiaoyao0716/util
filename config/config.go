@@ -1,3 +1,4 @@
+// Package config used to load config from json file.
 package config
 
 import (
@@ -7,6 +8,13 @@ import (
 )
 
 // Load load a json file to config from give path.
+//
+// config is an instance of Json Struct, such as:
+//
+// type Config struct {
+// 	Name string `json:"name"`
+// }
+//
 func Load(path string, config interface{}) error {
 	dir, err := os.Getwd()
 	if err != nil {
