@@ -44,13 +44,12 @@ var reader = bufio.NewReader(os.Stdin)
 // like `> ` and wait for input. you can override this behavour by the tips param. While, if
 // you don't want to show anything neither default tip nor your custom, please use nil as param.
 func ReadLine(tips ...interface{}) string {
-	if stack.Len() == 0 {
+	line := stack.Front()
+	if line == nil {
 		if len(tips) == 0 {
 			cout.Print("> ")
-		} else {
-			if tips[0] != nil {
-				cout.Println(tips...)
-			}
+		} else if tips[0] != nil {
+			cout.Println(tips...)
 		}
 
 		line, err := reader.ReadString('\n')
@@ -58,11 +57,8 @@ func ReadLine(tips ...interface{}) string {
 			return ReadLine(nil)
 		}
 		AbortInterrupt()
-		PushLine(strings.TrimRightFunc(line, unicode.IsSpace))
-	}
-	line := stack.Front()
-	if line == nil {
-		return ReadLine()
+		return strings.TrimRightFunc(line, unicode.IsSpace)
+		// PushLine(strings.TrimRightFunc(line, unicode.IsSpace))
 	}
 	return stack.Remove(line).(string)
 }
