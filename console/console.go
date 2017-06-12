@@ -49,7 +49,7 @@ func ReadLine(tips ...interface{}) string {
 		if len(tips) == 0 {
 			cout.Print("> ")
 		} else if tips[0] != nil {
-			cout.Println(tips...)
+			cout.Print(tips...)
 		}
 
 		line, err := reader.ReadString('\n')
