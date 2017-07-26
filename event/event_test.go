@@ -7,7 +7,6 @@ import (
 
 func TestNewPool(t *testing.T) {
 	p := NewPool()
-	p.Sync = true
 	fmt.Println("Create new pool:", p.types, p.names)
 
 	// bind listeners
@@ -38,14 +37,17 @@ func TestNewPool(t *testing.T) {
 
 	e1 := p.Emit(Key{"Test", "abc"}, "event01")
 	fmt.Println("Send an event:", e1)
+	p.Wait()
 
 	e2 := &Event{Key{"Test", "def"}, map[string]string{"name": "event02"}}
 	p.Publish(e2)
 	fmt.Println("Send an event:", e2)
+	p.Wait()
 
 	e3 := &Event{Key{"Test", "123"}, 123}
 	e3.Send(p)
 	fmt.Println("Send an event:", e3)
+	p.Wait()
 
 	// unbind listeners
 	fmt.Println()
@@ -61,6 +63,7 @@ func TestNewPool(t *testing.T) {
 	e1.Send(p)
 	e2.Send(p)
 	e3.Send(p)
+	p.Wait()
 
 	// tpye group
 	fmt.Println()
@@ -78,12 +81,12 @@ func TestNewPool(t *testing.T) {
 	p.Emit(Key{"Group01", "child"}, "group01 child")
 	p.Emit(Key{"Group02", ""}, "group02")
 	// p.Emit(Key{"Group02", "child"}, "group02")
+	p.Wait()
 
 	// restrict pool
 	fmt.Println()
 
 	rp := NewRestrictPool([]Key{{"Test", "abc"}, {"Test", "def"}, {"Group", ""}})
-	rp.Sync = true
 	fmt.Println("Create restrict pool:", rp.types, rp.names)
 	rp.Register(l1)
 	rp.Register(l2)
@@ -96,5 +99,6 @@ func TestNewPool(t *testing.T) {
 	rp.Publish(e2)
 	rp.Publish(e3)
 	rp.Emit(Key{"Group", "child"}, nil)
+	p.Wait()
 	fmt.Println("Restrict pool:", rp.types, rp.names)
 }

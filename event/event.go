@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 )
 
 // Key .
@@ -66,9 +67,11 @@ type Pool struct {
 	// You can implement it and return a bool value to decide if the key can be permit.
 	NilHandler func(Key) bool
 
-	// If execute listener's handler synchronous.
-	Sync bool
+	wg sync.WaitGroup
 }
+
+// Wait for all handlers finished.
+func (p *Pool) Wait() { p.wg.Wait() }
 
 // NewPool .
 func NewPool() *Pool {
@@ -81,7 +84,7 @@ func NewPool() *Pool {
 			log.Println(err)
 		},
 		NilHandler: func(Key) bool { return true },
-		Sync:       false,
+		wg:         sync.WaitGroup{},
 	}
 }
 
@@ -141,20 +144,20 @@ func (p *Pool) Publish(e *Event) {
 	if handlers == nil {
 		return
 	}
-	run := func(id string, handler Handler) {
-		err := handler(*e)
-		if err != nil {
-			p.ErrHandler(*e, id, err)
-		}
-	}
+
+	p.wg.Add(len(handlers))
 
 	for id, handler := range handlers {
-		if p.Sync {
-			run(id, handler)
-		} else {
-			go run(id, handler)
-		}
+		go func(id string, handler Handler) {
+			defer p.wg.Done()
+			err := handler(*e)
+			if err != nil {
+				p.ErrHandler(*e, id, err)
+			}
+		}(id, handler)
 	}
+
+	p.wg.Wait()
 }
 
 // Emit : send some data with the given key.
