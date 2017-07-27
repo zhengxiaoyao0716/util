@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 // Load load a json file to config from give path.
@@ -16,12 +17,13 @@ import (
 // }
 //
 func Load(path string, config interface{}) error {
-	dir, err := os.Getwd()
+	var err error
+	path, err = absPath(path)
 	if err != nil {
 		return err
 	}
 
-	bytes, err := ioutil.ReadFile(dir + "/" + path)
+	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -39,4 +41,49 @@ func LoadQ(path string, config interface{}) interface{} {
 		return nil
 	}
 	return config
+}
+
+// Dump .
+func Dump(config interface{}, path string) error {
+	var err error
+	path, err = absPath(path)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(path, bytes, os.ModeAppend); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var dir *string
+
+// SetDir set the directory for relative path find.
+func SetDir(d string) {
+	dir = &d
+}
+func absPath(p string) (string, error) {
+	if !filepath.IsAbs(p) {
+		var (
+			d   string
+			err error
+		)
+		if dir == nil {
+			d, err = os.Getwd()
+			if err != nil {
+				return "", nil
+			}
+		} else {
+			d = *dir
+		}
+		p = filepath.Join(d, p)
+	}
+	return p, nil
 }
