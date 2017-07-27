@@ -73,7 +73,10 @@ type Pool struct {
 // Wait for all handlers finished.
 func (p *Pool) Wait() { p.wg.Wait() }
 
-// NewPool .
+// NewPool create an event pool, you should manage your event keys manual.
+// Don't create event keys repeatedly and infinitely, witch may increase the pressure of GC.
+// In deployment environment, you should override the `NilHandler` check the legally keys.
+// Also, I provide `NewRestrictPool` to make it more convenient to manual keys.
 func NewPool() *Pool {
 	// TODO
 	return &Pool{
@@ -89,6 +92,21 @@ func NewPool() *Pool {
 }
 
 // NewRestrictPool create an event pool with init keys, and would reject any new keys insert.
+// Although looks a bit complexity, this function is more recommend to use.
+// You should best to maintain your keys to emulates. for example:
+/*
+var eks = []event.Key{
+	event.Key{Type: "SYS", Name: "start"},
+	event.Key{Type: "SYS", Name: "stop"},
+	...
+}
+type EKeyIndex int
+const (
+	EKeyStart EKeyIndex = iota
+	EKeyStop
+	...
+)
+*/
 func NewRestrictPool(keys []Key) *Pool {
 	p := NewPool()
 	for _, key := range keys {
