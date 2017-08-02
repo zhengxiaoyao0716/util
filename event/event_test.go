@@ -86,7 +86,10 @@ func TestNewPool(t *testing.T) {
 	// restrict pool
 	fmt.Println()
 
-	rp := NewRestrictPool([]Key{{"Test", "abc"}, {"Test", "def"}, {"Group", ""}})
+	// ERROR: rp := NewRestrictPool([][2]string{{"Test", "abc"}, {"Test", "def"}, {"Group", ""}}...)
+	rp := NewRestrictPool([]Key{{"Test", "abc"}, {"Test", "def"}, {"Group", ""}}...)
+	// rp := NewRestrictPool(Key{"Test", "abc"}, Key{"Test", "def"}, Key{"Group", ""})
+	// rp := NewRestrictPool([2]string{"Test", "abc"}, [2]string{"Test", "def"}, [2]string{"Group", ""})
 	fmt.Println("Create restrict pool:", rp.types, rp.names)
 	rp.Register(l1)
 	rp.Register(l2)

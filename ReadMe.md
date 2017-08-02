@@ -22,3 +22,8 @@ See [godoc](https://godoc.org/github.com/zhengxiaoyao0716/util)
 ### Example
 
 See unit test in packages.
+
+***
+### Change log
+
+- 2017/08/02: The interface of `Event` module has a bit change. the `Key` has change from `struct{Type, Name}` to `[2]string{Type, Name}`. 

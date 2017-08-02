@@ -8,16 +8,20 @@ import (
 )
 
 // Key .
-type Key struct {
-	Type string
-	// If Name == "":
-	//     during listener register it means registered at type (subscribe all event with the same type).
-	//     during event pubish it means that only listener who registered at type can received it.
-	Name string
-}
+// type Key struct {
+// 	Type string
+// 	// If Name == "":
+// 	//     during listener register it means registered at type (subscribe all event with the same type).
+// 	//     during event pubish it means that only listener who registered at type can received it.
+// 	Name string
+// }
+
+// Key .
+// Now the structure of `Key` changed to `[2]string{Type, Name}` .
+type Key [2]string
 
 func (k *Key) String() string {
-	return fmt.Sprintf(`{"type": "%s", "name": "%s"}`, k.Type, k.Name)
+	return fmt.Sprintf(`{"type": "%s", "name": "%s"}`, k[0], k[1])
 }
 
 // Event .
@@ -96,8 +100,8 @@ func NewPool() *Pool {
 // You should best to maintain your keys to emulates. for example:
 /*
 var eks = []event.Key{
-	event.Key{Type: "SYS", Name: "start"},
-	event.Key{Type: "SYS", Name: "stop"},
+	event.Key{"SYS", "start"},
+	event.Key{"SYS", "stop"},
 	...
 }
 type EKeyIndex int
@@ -107,7 +111,7 @@ const (
 	...
 )
 */
-func NewRestrictPool(keys []Key) *Pool {
+func NewRestrictPool(keys ...Key) *Pool {
 	p := NewPool()
 	for _, key := range keys {
 		p.find(key)
@@ -119,32 +123,32 @@ func NewRestrictPool(keys []Key) *Pool {
 func (p *Pool) find(k Key) map[string]Handler {
 	var handlers map[string]Handler
 
-	if k.Name == "" {
+	if k[1] == "" {
 		var ok bool
-		handlers, ok = p.types[k.Type]
+		handlers, ok = p.types[k[0]]
 		if !ok {
 			if !p.NilHandler(k) {
 				return nil
 			}
 			handlers = map[string]Handler{}
-			p.types[k.Type] = handlers
+			p.types[k[0]] = handlers
 		}
 	} else {
-		handlersMap, ok := p.names[k.Type]
+		handlersMap, ok := p.names[k[0]]
 		if !ok {
 			if !p.NilHandler(k) {
 				return nil
 			}
 			handlersMap = map[string]map[string]Handler{}
-			p.names[k.Type] = handlersMap
+			p.names[k[0]] = handlersMap
 		}
-		handlers, ok = handlersMap[k.Name]
+		handlers, ok = handlersMap[k[1]]
 		if !ok {
 			if !p.NilHandler(k) {
 				return nil
 			}
 			handlers = map[string]Handler{}
-			handlersMap[k.Name] = handlers
+			handlersMap[k[1]] = handlers
 		}
 	}
 
@@ -154,8 +158,8 @@ func (p *Pool) find(k Key) map[string]Handler {
 // Publish an event.
 func (p *Pool) Publish(e *Event) {
 	// If name == "", publish an event on type at the same time.
-	if e.Name != "" {
-		p.Publish(&Event{Key{e.Type, ""}, e.Data})
+	if e.Key[1] != "" {
+		p.Publish(&Event{Key{e.Key[0], ""}, e.Data})
 	}
 
 	handlers := p.find(e.Key)
