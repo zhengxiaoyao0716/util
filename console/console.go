@@ -58,9 +58,23 @@ func ReadLine(tips ...interface{}) string {
 		}
 		AbortInterrupt()
 		return strings.TrimRightFunc(line, unicode.IsSpace)
-		// PushLine(strings.TrimRightFunc(line, unicode.IsSpace))
 	}
 	return stack.Remove(line).(string)
+}
+
+// ReadWord split the result of `ReadLine` and return the first field.
+// Others words remand would be re-push into the stack.
+func ReadWord(tips ...interface{}) string {
+	line := ReadLine(tips...)
+	if line == "" {
+		return ""
+	}
+
+	words := strings.Fields(line)
+	for i := len(words) - 1; i > 0; i-- {
+		stack.PushFront(words[i])
+	}
+	return words[0]
 }
 
 // PushLine push a line of string into pre-read list, used to insert data manually.
