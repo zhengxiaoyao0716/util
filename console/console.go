@@ -85,12 +85,15 @@ var sigChan = make(chan os.Signal, 1)
 
 // CatchInterrupt make a listen on `SIGINT` signal, and will finish the progress after twice trigger.
 // You can use `TriggerInterrupt` to send signal manually, ot `AbortInterrupt` to reset count.
-func CatchInterrupt() {
+func CatchInterrupt(clean ...func()) {
 	signal.Notify(sigChan, os.Interrupt)
 	go func() {
 		for {
 			_ = <-sigChan
 			if interrupt {
+				for _, fn := range clean {
+					fn()
+				}
 				os.Exit(0)
 			} else {
 				cout.Println("\n(Press", cout.Info("^C"), "again to exit.)")
