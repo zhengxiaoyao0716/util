@@ -14,7 +14,7 @@ type Palette struct {
 	LOG  color.Attribute
 	INFO color.Attribute
 	WARN color.Attribute
-	YEA  color.Attribute
+	YES  color.Attribute
 	ERR  color.Attribute
 }
 
@@ -23,7 +23,7 @@ var colors [5]*color.Color
 // SetPalette set the color or type of each taget.
 func SetPalette(p Palette) {
 	colors = [5]*color.Color{}
-	for index, attr := range []color.Attribute{p.LOG, p.INFO, p.WARN, p.YEA, p.ERR} {
+	for index, attr := range []color.Attribute{p.LOG, p.INFO, p.WARN, p.YES, p.ERR} {
 		colors[index] = color.New(attr)
 	}
 }
@@ -37,8 +37,8 @@ func Info(format string, a ...interface{}) string { return colors[1].SprintfFunc
 // Warn wrap the give string with the color of `WARN` taget.
 func Warn(format string, a ...interface{}) string { return colors[2].SprintfFunc()(format, a...) }
 
-// Yea wrap the give string with the color of `YEA` taget.
-func Yea(format string, a ...interface{}) string { return colors[3].SprintfFunc()(format, a...) }
+// Yes wrap the give string with the color of `YES` taget.
+func Yes(format string, a ...interface{}) string { return colors[3].SprintfFunc()(format, a...) }
 
 // Err wrap the give string with the color of `ERR` taget.
 func Err(format string, a ...interface{}) string { return colors[4].SprintfFunc()(format, a...) }
@@ -63,7 +63,7 @@ func init() {
 		LOG:  color.FgHiWhite,
 		INFO: color.FgHiBlue,
 		WARN: color.FgHiYellow,
-		YEA:  color.FgHiGreen,
+		YES:  color.FgHiGreen,
 		ERR:  color.FgHiRed,
 	})
 }

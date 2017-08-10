@@ -10,7 +10,7 @@ func TestAll(t *testing.T) {
 	Log("underline")
 	Info("info")
 	Warn("Warn")
-	Yea("yea")
+	Yes("yes")
 	Err("err")
 	Custom(color.BgWhite, color.FgBlack)("reverse")
 }

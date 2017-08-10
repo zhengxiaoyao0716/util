@@ -9,7 +9,7 @@ import (
 func TestPrintln(t *testing.T) {
 	Println(
 		">",
-		Log("underline"), Info("info"), Warn("Warn"), Yea("yea"), Err("err"),
+		Log("underline"), Info("info"), Warn("Warn"), Yes("yes"), Err("err"),
 		Custom(color.BgWhite, color.FgBlack)("reverse"),
 	)
 }
@@ -20,7 +20,7 @@ func TestPrintf(t *testing.T) {
 		Log("%s", "underline"),
 		Info("%s", "info"),
 		Warn("%s", "Warn"),
-		Yea("%s", "yea"),
+		Yes("%s", "yes"),
 		Err("%s", "err"),
 		Custom(color.BgWhite, color.FgBlack)("reverse"),
 	)

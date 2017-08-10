@@ -25,8 +25,8 @@ func Info(format string, a ...interface{}) { cout.Println(cout.Info(format, a...
 // Warn wrap the give string with the color of `WARN` taget.
 func Warn(format string, a ...interface{}) { cout.Println(cout.Warn(format, a...)) }
 
-// Yea wrap the give string with the color of `YEA` taget.
-func Yea(format string, a ...interface{}) { cout.Println(cout.Yea(format, a...)) }
+// Yes wrap the give string with the color of `YES` taget.
+func Yes(format string, a ...interface{}) { cout.Println(cout.Yes(format, a...)) }
 
 // Err wrap the give string with the color of `ERR` taget.
 func Err(format string, a ...interface{}) { cout.Println(cout.Err(format, a...)) }
