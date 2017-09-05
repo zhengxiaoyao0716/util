@@ -77,6 +77,13 @@ func ReadWord(tips ...interface{}) string {
 	return words[0]
 }
 
+// ReadPass behavours same as `ReadLine`, but would hide the echo of user input.
+func ReadPass(tips ...interface{}) string {
+	result := ReadLine(append(tips, "\033[8m")...)
+	cout.Print("\033[28m")
+	return result
+}
+
 // PushLine push a line of string into pre-read list, used to insert data manually.
 func PushLine(line string) { stack.PushBack(line) }
 

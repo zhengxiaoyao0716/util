@@ -5,6 +5,8 @@ import (
 )
 
 func main() {
+	console.Log(console.ReadPass("Password: "))
+
 	console.PushLine("Hello World.")
 	console.PushLine("trigger")
 	console.PushLine("abort")
