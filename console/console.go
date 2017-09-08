@@ -40,6 +40,9 @@ func Custom(attrs ...color.Attribute) func(format string, a ...interface{}) {
 var stack = list.New()
 var reader = bufio.NewReader(os.Stdin)
 
+// In is the default tip syntax for user input, used when `tips` param is nil.
+var In = cout.Yes("> ")
+
 // ReadLine read a line of input from standart input. By default, it will output a tip symbol
 // like `> ` and wait for input. you can override this behavour by the tips param. While, if
 // you don't want to show anything neither default tip nor your custom, please use nil as param.
@@ -47,7 +50,7 @@ func ReadLine(tips ...interface{}) string {
 	line := stack.Front()
 	if line == nil {
 		if len(tips) == 0 {
-			cout.Print("> ")
+			cout.Print(In)
 		} else if tips[0] != nil {
 			cout.Print(tips...)
 		}
