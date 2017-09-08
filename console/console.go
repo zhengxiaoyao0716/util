@@ -106,7 +106,7 @@ func CatchInterrupt(clean ...func()) {
 				}
 				os.Exit(0)
 			} else {
-				cout.Println("\n(Press", cout.Info("^C"), "again to exit.)")
+				cout.Println(cout.Warn("^C")+"\n(Press", cout.Info("^C"), "again to exit.)")
 				interrupt = true
 			}
 		}
