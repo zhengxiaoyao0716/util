@@ -82,7 +82,6 @@ func (p *Pool) Wait() { p.wg.Wait() }
 // In deployment environment, you should override the `NilHandler` check the legally keys.
 // Also, I provide `NewRestrictPool` to make it more convenient to manual keys.
 func NewPool() *Pool {
-	// TODO
 	return &Pool{
 		types: map[string]map[string]Handler{},
 		names: map[string]map[string]map[string]Handler{},
