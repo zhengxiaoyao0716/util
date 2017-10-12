@@ -6,6 +6,7 @@ package flag
 
 import "strconv"
 import "flag"
+import "fmt"
 
 // string
 
@@ -43,6 +44,24 @@ func (i *intValue) Get() interface{} {
 
 func (i *intValue) String() string { return strconv.Itoa(i.Get().(int)) }
 
+// float
+type floatValue func() float64
+
+func (f *floatValue) Set(s string) error {
+	v, err := strconv.ParseFloat(s, 64)
+	*f = func() float64 { return v }
+	return err
+}
+
+func (f *floatValue) Get() interface{} {
+	if *f == nil {
+		return 0
+	}
+	return (*f)()
+}
+
+func (f *floatValue) String() string { return fmt.Sprint(f.Get().(float64)) }
+
 // bool
 type boolValue func() bool
 
@@ -75,6 +94,13 @@ func Int(name string, usage string) *func() int {
 	p := new(intValue)
 	flag.Var(p, name, usage)
 	return (*func() int)(p)
+}
+
+// Float .
+func Float(name string, usage string) *func() float64 {
+	p := new(floatValue)
+	flag.Var(p, name, usage)
+	return (*func() float64)(p)
 }
 
 // Bool .
