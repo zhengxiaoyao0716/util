@@ -43,14 +43,26 @@ func (bat *Bat) Append(cmd string) (*Bat, error) {
 	return bat, nil
 }
 
+// AppendAll append all the lines.
+func (bat *Bat) AppendAll(cmds ...string) (*Bat, error) {
+	for _, cmd := range cmds {
+		if _, err := bat.Append(cmd); err != nil {
+			return nil, err
+		}
+	}
+	return bat, nil
+}
+
+// Cmd of the bat.
+func (bat *Bat) Cmd(params ...string) *exec.Cmd {
+	bat.Close()
+	return exec.Command(bat.FileName, params...)
+}
+
 // Run the bat.
 func (bat *Bat) Run(params ...string) error {
-	paramStr := ""
-	for _, param := range params {
-		paramStr += param
-	}
 	bat.Close()
-	return exec.Command(bat.FileName, paramStr).Run()
+	return bat.Cmd(params...).Run()
 }
 
 // Remove and free the bat.
@@ -67,15 +79,13 @@ func Exec(cmds ...string) error {
 	}
 	defer bat.Remove()
 
-	for _, cmd := range cmds {
-		if bat, err = bat.Append(cmd); err != nil {
-			return err
-		}
+	if bat, err = bat.AppendAll(cmds...); err != nil {
+		return err
 	}
 
 	if err = bat.Close(); err != nil {
 		return err
 	}
 
-	return exec.Command(bat.FileName).Run()
+	return bat.Run()
 }
