@@ -8,30 +8,37 @@ import (
 	"strings"
 )
 
-// ScanIPv4 scan all the available local ipv4 address.
-func ScanIPv4() (map[string]net.IP, error) {
+// ScanNets scan all the available local network address.
+func ScanNets() (map[string][]*net.IPNet, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return nil, err
 	}
 
-	ips := map[string]net.IP{}
+	netMap := map[string][]*net.IPNet{}
 
 	for _, iface := range ifaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
 			return nil, err
 		}
+		nets := []*net.IPNet{}
 		for _, addr := range addrs {
-			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-				if ipnet.IP.To4() != nil && ipnet.IP.IsGlobalUnicast() {
-					ips[iface.Name] = ipnet.IP
-				}
+			ipnet, ok := addr.(*net.IPNet)
+			if !ok {
+				continue
+			}
+			if ipnet.IP.IsLoopback() || ipnet.IP.IsGlobalUnicast() {
+				nets = append(nets, ipnet)
 			}
 		}
+		if len(nets) > 0 {
+			netMap[iface.Name] = nets
+		}
+
 	}
 
-	return ips, nil
+	return netMap, nil
 }
 
 // FindPorts find available port in [defaultPort, 65535)

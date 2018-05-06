@@ -6,12 +6,18 @@ import (
 	"testing"
 )
 
-func TestScanIPv4(t *testing.T) {
-	ips, err := ScanIPv4()
+func TestScanNets(t *testing.T) {
+	netMap, err := ScanNets()
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(ips)
+	for name, nets := range netMap {
+		fmt.Printf("[%s]\n", name)
+		for _, net := range nets {
+			fmt.Println(net)
+		}
+		fmt.Println()
+	}
 }
 
 func TestFindPorts(t *testing.T) {
