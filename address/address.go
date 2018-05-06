@@ -2,8 +2,8 @@
 package address
 
 import (
+	"log"
 	"net"
-	"net/http"
 	"strconv"
 	"strings"
 )
@@ -34,14 +34,32 @@ func ScanIPv4() (map[string]net.IP, error) {
 	return ips, nil
 }
 
-// FindPort find the first available port from given default port to 65535
-func FindPort(host string, defaultPort int) int {
+// FindPorts find available port in [defaultPort, 65535)
+func FindPorts(host string, defaultPort int, reciever func(int, bool) bool) {
 	for port := defaultPort; port < 65535; port++ {
-		address := "http://" + host + ":" + strconv.Itoa(port)
-		_, err := http.Head(address)
-		if err != nil && strings.Contains(err.Error(), "refused") {
-			return port
+		address := host + ":" + strconv.Itoa(port)
+		tcpAddr, err := net.ResolveTCPAddr("tcp", address)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		_, err = net.DialTCP("tcp", nil, tcpAddr)
+		available := err != nil && strings.Contains(err.Error(), "refused")
+		if reciever(port, available) {
+			return
 		}
 	}
-	return -1
+	reciever(-1, false)
+}
+
+// FindPort find the first available port from given default port to 65535
+func FindPort(host string, defaultPort int) int {
+	var port int
+	FindPorts(host, defaultPort, func(p int, ok bool) bool {
+		if !ok {
+			return false
+		}
+		port = p
+		return true
+	})
+	return port
 }
