@@ -50,6 +50,15 @@ func (json *Object) ValueAt(name string, defaults ...interface{}) (interface{}, 
 	return value, nil
 }
 
+// MustValueAt .
+func (json *Object) MustValueAt(name string, defaults ...interface{}) interface{} {
+	r, err := json.ValueAt(name, defaults...)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
 // ValueAt .
 func (json *Array) ValueAt(index int, defaults ...interface{}) (interface{}, error) {
 	if index >= len(*json) {
@@ -63,6 +72,15 @@ func (json *Array) ValueAt(index int, defaults ...interface{}) (interface{}, err
 		return nil, &ValueNotFoundError{refContainer{json}, index}
 	}
 	return (*json)[index], nil
+}
+
+// MustValueAt .
+func (json *Array) MustValueAt(index int, defaults ...interface{}) interface{} {
+	r, err := json.ValueAt(index, defaults...)
+	if err != nil {
+		panic(err)
+	}
+	return r
 }
 
 //go:generate go run gen.go
