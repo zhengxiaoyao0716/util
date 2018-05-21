@@ -60,9 +60,17 @@ func (l *Listener) Unbind(p *Pool) { p.Remove(l) }
 // Pool .
 type Pool struct {
 	// {"type": {"id": handler}}
-	types map[string]map[string]Handler
+	types map[string]struct {
+		handlers map[string]Handler
+		lock     *sync.RWMutex
+	}
+	typesLock sync.Mutex
 	// {"type": {"name": {"id": handler}}}
-	names map[string]map[string]map[string]Handler
+	names map[string]map[string]struct {
+		handlers map[string]Handler
+		lock     *sync.RWMutex
+	}
+	namesLock sync.Mutex
 
 	// ErrHandler would be called when a listener's handler executed and return an error.
 	// The param `e` is the event, `id` is the `ID` field of the failed listener.
@@ -83,8 +91,14 @@ func (p *Pool) Wait() { p.wg.Wait() }
 // Also, I provide `NewRestrictPool` to make it more convenient to manual keys.
 func NewPool() *Pool {
 	return &Pool{
-		types: map[string]map[string]Handler{},
-		names: map[string]map[string]map[string]Handler{},
+		types: map[string]struct {
+			handlers map[string]Handler
+			lock     *sync.RWMutex
+		}{},
+		names: map[string]map[string]struct {
+			handlers map[string]Handler
+			lock     *sync.RWMutex
+		}{},
 		ErrHandler: func(e Event, id string, err error) {
 			log.Printf(`handler execute failed, event: %s, listener id: %s .\n`, e, id)
 			log.Println(err)
@@ -119,39 +133,51 @@ func NewRestrictPool(keys ...Key) *Pool {
 	return p
 }
 
-func (p *Pool) find(k Key) map[string]Handler {
-	var handlers map[string]Handler
-
+func (p *Pool) find(k Key) (map[string]Handler, *sync.RWMutex) {
 	if k[1] == "" {
-		var ok bool
-		handlers, ok = p.types[k[0]]
+		p.typesLock.Lock()
+		defer p.typesLock.Unlock()
+
+		s, ok := p.types[k[0]]
 		if !ok {
 			if !p.NilHandler(k) {
-				return nil
+				return nil, nil
 			}
-			handlers = map[string]Handler{}
-			p.types[k[0]] = handlers
+			s = struct {
+				handlers map[string]Handler
+				lock     *sync.RWMutex
+			}{map[string]Handler{}, &sync.RWMutex{}}
+			p.types[k[0]] = s
 		}
-	} else {
-		handlersMap, ok := p.names[k[0]]
-		if !ok {
-			if !p.NilHandler(k) {
-				return nil
-			}
-			handlersMap = map[string]map[string]Handler{}
-			p.names[k[0]] = handlersMap
-		}
-		handlers, ok = handlersMap[k[1]]
-		if !ok {
-			if !p.NilHandler(k) {
-				return nil
-			}
-			handlers = map[string]Handler{}
-			handlersMap[k[1]] = handlers
-		}
+		return s.handlers, s.lock
 	}
 
-	return handlers
+	p.namesLock.Lock()
+	defer p.namesLock.Unlock()
+
+	handlersMap, ok := p.names[k[0]]
+	if !ok {
+		if !p.NilHandler(k) {
+			return nil, nil
+		}
+		handlersMap = map[string]struct {
+			handlers map[string]Handler
+			lock     *sync.RWMutex
+		}{}
+		p.names[k[0]] = handlersMap
+	}
+	s, ok := handlersMap[k[1]]
+	if !ok {
+		if !p.NilHandler(k) {
+			return nil, nil
+		}
+		s = struct {
+			handlers map[string]Handler
+			lock     *sync.RWMutex
+		}{map[string]Handler{}, &sync.RWMutex{}}
+		handlersMap[k[1]] = s
+	}
+	return s.handlers, s.lock
 }
 
 // Publish an event.
@@ -161,22 +187,24 @@ func (p *Pool) Publish(e *Event) {
 		p.Publish(&Event{Key{e.Key[0], ""}, e.Data})
 	}
 
-	handlers := p.find(e.Key)
+	handlers, lock := p.find(e.Key)
 	if handlers == nil {
 		return
 	}
-
-	p.wg.Add(len(handlers))
-
-	for id, handler := range handlers {
-		go func(id string, handler Handler) {
-			defer p.wg.Done()
-			err := handler(*e)
-			if err != nil {
-				p.ErrHandler(*e, id, err)
-			}
-		}(id, handler)
+	execute := func(id string, handler Handler) {
+		defer p.wg.Done()
+		err := handler(*e)
+		if err != nil {
+			p.ErrHandler(*e, id, err)
+		}
 	}
+
+	lock.RLock()
+	p.wg.Add(len(handlers))
+	for id, handler := range handlers {
+		go execute(id, handler)
+	}
+	lock.RUnlock()
 
 	p.wg.Wait()
 }
@@ -190,10 +218,13 @@ func (p *Pool) Emit(k Key, d interface{}) *Event {
 
 // Register a listener.
 func (p *Pool) Register(l *Listener) {
-	handlers := p.find(l.Key)
+	handlers, lock := p.find(l.Key)
 	if handlers == nil {
 		return
 	}
+	lock.Lock()
+	defer lock.Unlock()
+
 	// While `ID` is "", it will auto generate an id for listener.
 	// However, notice that's an inner implement and may be changed.
 	// You should not use this function to register a listener without certain unique id.
@@ -226,10 +257,13 @@ func (p *Pool) Remove(l *Listener) {
 
 // Off : unbind a handler from the given key.
 func (p *Pool) Off(k Key, id string) *Listener {
-	handlers := p.find(k)
+	handlers, lock := p.find(k)
 	if handlers == nil {
 		return nil
 	}
+	lock.Lock()
+	defer lock.Unlock()
+
 	l := &Listener{id, k, handlers[id]}
 	delete(handlers, id)
 	return l
