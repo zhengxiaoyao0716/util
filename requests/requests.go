@@ -5,22 +5,63 @@ package requests
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
-// Get HTTP Get method.
-func Get(url string, data map[string]string) (*Response, error) {
+type request func(url string, data map[string]interface{}) (*Response, error)
+
+// Default client with HTTP request methods
+var Default = New(http.DefaultClient)
+
+// HTTP request methods
+var (
+	Get  = Default.Get
+	Post = Default.Post
+)
+
+// New .
+func New(client *http.Client) struct {
+	Get  request
+	Post request
+} {
+	return struct {
+		Get  request
+		Post request
+	}{
+		Get: func(url string, data map[string]interface{}) (*Response, error) {
+			return get(client, url, data)
+		},
+		Post: func(url string, data map[string]interface{}) (*Response, error) {
+			return post(client, url, data)
+		},
+	}
+}
+
+func get(client *http.Client, url string, data map[string]interface{}) (*Response, error) {
 	var params string
 	if data != nil {
 		for key, value := range data {
-			params += key + "=" + value + "&"
+			switch value := value.(type) {
+			case []string:
+				for _, v := range value {
+					params += key + "=" + v + "&"
+				}
+			case string:
+				params += key + "=" + value + "&"
+			case []interface{}:
+				for _, v := range value {
+					params += key + "=" + fmt.Sprint(v) + "&"
+				}
+			default:
+				params += key + "=" + fmt.Sprint(value) + "&"
+			}
 		}
 	}
-	return decorateResp(http.Get(url + "?" + params))
+	return decorateResp(client.Get(url + "?" + params))
 }
 
-// Post HTTP Post method.
-func Post(url string, data map[string]interface{}) (*Response, error) {
+func post(client *http.Client, url string, data map[string]interface{}) (*Response, error) {
 	var content []byte
 	var err error
 	var resp *http.Response
@@ -29,9 +70,9 @@ func Post(url string, data map[string]interface{}) (*Response, error) {
 		if err != nil {
 			return nil, err
 		}
-		resp, err = http.Post(url, "application/json;charset=utf-8", bytes.NewBuffer(content))
+		resp, err = client.Post(url, "application/json;charset=utf-8", bytes.NewBuffer(content))
 	} else {
-		resp, err = http.Post(url, "", nil)
+		resp, err = client.Post(url, "", nil)
 	}
 	return decorateResp(resp, err)
 }
