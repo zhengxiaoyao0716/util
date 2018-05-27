@@ -100,7 +100,7 @@ func NewPool() *Pool {
 			lock     *sync.RWMutex
 		}{},
 		ErrHandler: func(e Event, id string, err error) {
-			log.Printf(`handler execute failed, event: %s, listener id: %s .\n`, e, id)
+			log.Printf("handler execute failed, event: %v, listener id: %s, data: %v.\n", e.Key, id, e.Data)
 			log.Println(err)
 		},
 		NilHandler: func(Key) bool { return true },
